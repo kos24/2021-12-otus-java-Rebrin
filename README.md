@@ -1,5 +1,5 @@
-курс OTUS "Java Developer. Professional"
 
+# Курс OTUS "Java Developer. Professional"
 
 Группа 2021-12
 
