@@ -1,8 +1,6 @@
 package homework;
 
-import java.util.Comparator;
-
-public class Customer implements Comparable<Customer> {
+public class Customer {
     private final long id;
     private String name;
     private long scores;
@@ -58,12 +56,4 @@ public class Customer implements Comparable<Customer> {
         return (int) (id ^ (id >>> 32));
     }
 
-    @Override
-    public int compareTo(Customer customer) {
-
-        return Comparator.comparing((Customer c) -> c.name.length())
-                .thenComparing(Customer::getName)
-                .thenComparing(c -> c.scores)
-                .compare(this, customer);
-    }
 }
