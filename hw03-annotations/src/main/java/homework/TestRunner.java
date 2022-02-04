@@ -10,32 +10,23 @@ import java.util.*;
 
 public class TestRunner {
 
-    public <T> void start(Class<T> clazz) {
+    public static <T> void run(Class<T> clazz) {
+        new TestRunner().invokeTestMethods(clazz);
+    }
+
+    public <T> void invokeTestMethods(Class<T> clazz) {
 
         Map<Status, Integer> result = new EnumMap<>(Status.class);
 
-        List<Method> testMethods = new ArrayList<>();
-        List<Method> beforeMethods = new ArrayList<>();
-        List<Method> afterMethods = new ArrayList<>();
+        Map<TestAnnotation, List<Method>> parsedMethods = processAnnotations(clazz);
 
-        Method[] methodsAll = clazz.getDeclaredMethods();
-        for (Method method : methodsAll) {
-            if (method.isAnnotationPresent(Test.class)) {
-                testMethods.add(method);
-            } else if (method.isAnnotationPresent(Before.class)) {
-                beforeMethods.add(method);
-            } else if (method.isAnnotationPresent(After.class)) {
-                afterMethods.add(method);
-            }
-        }
+        validateAnnotations(parsedMethods.get(TestAnnotation.BEFORE));
+        validateAnnotations(parsedMethods.get(TestAnnotation.AFTER));
 
-        validateAnnotations(beforeMethods);
-        validateAnnotations(afterMethods);
-
-        testMethods.forEach(method -> {
+        parsedMethods.get(TestAnnotation.TEST).forEach(method -> {
             Object object = ReflectionHelper.instantiate(clazz);
             try {
-                invokeBeforeMethod(object, beforeMethods);
+                invokeBeforeMethod(object, parsedMethods.get(TestAnnotation.BEFORE));
                 invokeTestMethod(object, method);
                 System.out.printf("УСПЕХ: %s%n", method.getName());
                 System.out.println("========================================");
@@ -45,9 +36,38 @@ public class TestRunner {
                 System.out.println("========================================");
                 result.put(Status.FAILURE, result.get(Status.FAILURE) == null ? 1 : result.get(Status.FAILURE) + 1);
             } finally {
-                invokeAfterMethod(object, afterMethods);
+                invokeAfterMethod(object, parsedMethods.get(TestAnnotation.AFTER));
             }
         });
+        gatherStatistics(result);
+    }
+
+    private <T> Map<TestAnnotation, List<Method>> processAnnotations(Class<T> clazz) {
+
+        Map<TestAnnotation, List<Method>> markedMethods = new EnumMap<>(TestAnnotation.class);
+        List<Method> testMethods = new ArrayList<>();
+        List<Method> beforeMethods = new ArrayList<>();
+        List<Method> afterMethods = new ArrayList<>();
+
+        Method[] methodsAll = clazz.getDeclaredMethods();
+        for (Method method : methodsAll) {
+            if (method.isAnnotationPresent(Test.class)) {
+                testMethods.add(method);
+            }
+            if (method.isAnnotationPresent(Before.class)) {
+                beforeMethods.add(method);
+            }
+            if (method.isAnnotationPresent(After.class)) {
+                afterMethods.add(method);
+            }
+        }
+        markedMethods.put(TestAnnotation.TEST, testMethods);
+        markedMethods.put(TestAnnotation.BEFORE, beforeMethods);
+        markedMethods.put(TestAnnotation.AFTER, afterMethods);
+        return markedMethods;
+    }
+
+    private void gatherStatistics(Map<Status, Integer> result) {
         Integer success = result.get(Status.SUCCESS) == null ? 0 : result.get(Status.SUCCESS);
         Integer failure = result.get(Status.FAILURE) == null ? 0 : result.get(Status.FAILURE);
         System.out.printf("Результаты теста. %n" +

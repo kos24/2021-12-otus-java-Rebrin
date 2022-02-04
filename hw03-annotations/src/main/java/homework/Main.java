@@ -4,6 +4,6 @@ package homework;
 public class Main {
     public static void main(String... args) {
 
-        new TestRunner().start(DigitCombinerTest.class);
+        TestRunner.run(DigitCombinerTest.class);
     }
 }

@@ -13,7 +13,6 @@ public class DigitCombinerTest {
         System.out.println("Экземпляр тестового класса: " + Integer.toHexString(hashCode()));
     }
 
-
     @Test
     void shouldAddTwoNumbers() {
         System.out.println(digitCombiner.sum(2, 2) == 4);
