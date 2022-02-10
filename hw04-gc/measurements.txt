@@ -1,0 +1,31 @@
+heap 256Mb
+OutOfMemmoryError
+heap 512Mb
+spend msec:12031, sec:12
+heap 1024Mb
+spend msec:11131, sec:11
+heap 1280Mb
+spend msec:11187, sec:11
+heap 1536Mb
+spend msec:10639, sec:10
+heap 1792Mb
+spend msec:10126, sec:10
+heap 2048Mb
+spend msec:10494, sec:10
+
+после оптимизации:
+
+heap 256Mb
+spend msec:1692, sec:1
+heap 512Mb
+spend msec:1646, sec:1
+heap 1024Mb
+spend msec:1694, sec:1
+heap 1280Mb
+spend msec:1693, sec:1
+heap 1536Mb
+spend msec:1686, sec:1
+heap 1792Mb
+spend msec:1671, sec:1
+heap 2048Mb
+spend msec:1678, sec:1
