@@ -20,24 +20,22 @@ public class Ioc {
 
     static class CustomInvocationHandler implements InvocationHandler {
         private final TestLogging testLogging;
-
-        private final List<Method> annotatedMethods;
+        private final Map<Method, Boolean> annotatedMethods;
 
         public CustomInvocationHandler(TestLogging testLogging) {
             this.testLogging = testLogging;
             this.annotatedMethods = Arrays.stream(testLogging.getClass().getDeclaredMethods())
-                    .filter(m -> m.isAnnotationPresent(Log.class))
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toMap(method -> method, method -> method.isAnnotationPresent(Log.class)));
         }
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             Object object = method.invoke(testLogging, args);
-            annotatedMethods.stream()
-                    .filter(m -> m.getName().equals(method.getName())
-                            && Arrays.stream(m.getParameterTypes()).allMatch(p -> Arrays.asList(method.getParameterTypes()).contains(p))
-                            && m.getParameterCount() == method.getParameterCount()).
-                    forEach(m -> System.out.printf("executed method: %s, params: %s%n", method.getName(), printParameters(args)));
+            annotatedMethods.forEach((m, annotated) -> {
+                if (methodMatches(m, method, annotated)) {
+                    System.out.printf("executed method: %s, params: %s%n", method.getName(), printParameters(args));
+                }
+            });
             return object;
         }
 
@@ -47,6 +45,13 @@ public class Ioc {
                 params.put("param" + (i + 1), args[i].toString());
             }
             return params;
+        }
+
+        private boolean methodMatches(Method method, Method methodToCompare, Boolean annotated) {
+            return method.getName().equals(methodToCompare.getName())
+                    && Arrays.stream(method.getParameterTypes()).allMatch(p -> Arrays.asList(methodToCompare.getParameterTypes()).contains(p))
+                    && method.getParameterCount() == methodToCompare.getParameterCount()
+                    && Boolean.TRUE.equals(annotated);
         }
     }
 }
