@@ -49,8 +49,7 @@ public class Ioc {
 
         private boolean methodMatches(Method method, Method methodToCompare, Boolean annotated) {
             return method.getName().equals(methodToCompare.getName())
-                    && Arrays.stream(method.getParameterTypes()).allMatch(p -> Arrays.asList(methodToCompare.getParameterTypes()).contains(p))
-                    && method.getParameterCount() == methodToCompare.getParameterCount()
+                    && Arrays.equals(method.getParameterTypes(),methodToCompare.getParameterTypes())
                     && Boolean.TRUE.equals(annotated);
         }
     }
