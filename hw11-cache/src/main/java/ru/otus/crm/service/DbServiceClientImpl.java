@@ -17,12 +17,12 @@ public class DbServiceClientImpl implements DBServiceClient {
 
     private final DataTemplate<Client> clientDataTemplate;
     private final TransactionManager transactionManager;
-    private final HwCache<Long, Client> cache = new MyCache<>();
+    private final HwCache<String, Client> cache = new MyCache<>();
 
     {
-        HwListener<Long, Client> listener = new HwListener<Long, Client>() {
+        HwListener<String, Client> listener = new HwListener<String, Client>() {
             @Override
-            public void notify(Long key, Client value, String action) {
+            public void notify(String key, Client value, String action) {
                 log.info("key:{}, value:{}, action: {}", key, value, action);
             }
         };
@@ -42,12 +42,12 @@ public class DbServiceClientImpl implements DBServiceClient {
             if (client.getId() == null) {
                 clientDataTemplate.insert(session, clientCloned);
                 log.info("created client: {}", clientCloned);
-                cache.put(clientCloned.getId(),clientCloned);
+                cache.put(String.valueOf(clientCloned.getId()),clientCloned);
                 return clientCloned;
             }
             clientDataTemplate.update(session, clientCloned);
-            if (cache.get(clientCloned.getId()) == null) {
-                cache.put(clientCloned.getId(),clientCloned);
+            if (cache.get(String.valueOf(clientCloned.getId())) == null) {
+                cache.put(String.valueOf(clientCloned.getId()),clientCloned);
             }
             log.info("updated client: {}", clientCloned);
             return clientCloned;
@@ -56,12 +56,12 @@ public class DbServiceClientImpl implements DBServiceClient {
 
     @Override
     public Optional<Client> getClient(long id) {
-        Client client = cache.get(id);
+        Client client = cache.get(String.valueOf(id));
         if (client == null) {
             return transactionManager.doInReadOnlyTransaction(session -> {
                 var clientOptional = clientDataTemplate.findById(session, id);
                 log.info("client: {}", clientOptional);
-                cache.put(id, clientOptional.orElse(null));
+                cache.put(String.valueOf(id), clientOptional.orElse(null));
                 return clientOptional;
             });
         }
