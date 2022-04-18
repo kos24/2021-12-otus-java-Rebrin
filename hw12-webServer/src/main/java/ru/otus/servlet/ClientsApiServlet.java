@@ -45,10 +45,12 @@ public class ClientsApiServlet extends HttpServlet {
         String street = request.getParameter(ADDRESS);
         String phone = request.getParameter(PHONE);
 
-        dbServiceClient.saveClient(new Client(null,  fullName,
+        Client client = dbServiceClient.saveClient(new Client(null,  fullName,
                 new Address(null, street),
                 List.of(new Phone(null, phone))));
 
-        response.sendRedirect("/clients");
+        response.setContentType("application/json;charset=UTF-8");
+        ServletOutputStream out = response.getOutputStream();
+        out.print(gson.toJson(client));
     }
 }
