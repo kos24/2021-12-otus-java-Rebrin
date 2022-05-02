@@ -5,15 +5,14 @@ import ru.otus.appcontainer.api.AppComponentsContainer;
 import ru.otus.appcontainer.api.AppComponentsContainerConfig;
 import ru.otus.exceptions.ContainerInstantiationException;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class AppComponentsContainerImpl implements AppComponentsContainer {
 
     private final List<Object> appComponents = new ArrayList<>();
     private final Map<String, Object> appComponentsByName = new HashMap<>();
-    private Map<String, String> beanNames = new HashMap<>();
 
     public AppComponentsContainerImpl(Class<?> initialConfigClass) {
         processConfig(initialConfigClass);
@@ -31,27 +30,31 @@ public class AppComponentsContainerImpl implements AppComponentsContainer {
         if (appMethods.isEmpty()) {
             throw new ContainerInstantiationException("No AppComponent present in config file");
         }
-        fillBeanNamesMap(appMethods);
-        fillAppComponentsMap(object, appMethods, appComponentsByName);
-
+        fillAppComponentsMap(object, appMethods);
     }
 
-    private void fillAppComponentsMap(Object object, List<Method> appMethods, Map<String, Object> appComponentsByName) {
+    private void fillAppComponentsMap(Object object, List<Method> appMethods) {
         for (Method method : appMethods) {
-            List<Object> args = new ArrayList<>();
+            Object[] args = new Object[method.getParameterCount()];
+
             try {
                 Object component;
-                if (method.getParameterTypes().length > 0) {
-                    Arrays.stream(method.getParameterTypes()).forEachOrdered(
-                            param -> args.add(appComponentsByName.get(param.getSimpleName()))
-                    );
-                    component = method.invoke(object, args.toArray());
-                } else {
-                    component = method.invoke(object);
+
+                for (int i = 0; i < args.length; i++) {
+                    args[i] = getAppComponent(method.getParameterTypes()[i]);
+                    if (args[i] == null) {
+                        throw new ContainerInstantiationException(String.format("Component of type: %s not found",
+                                method.getParameterTypes()[i]));
+                    }
                 }
-                appComponentsByName.put(method.getReturnType().getSimpleName(), component);
+                component = method.invoke(object, args);
+                if (appComponents.stream().map(Object::getClass).anyMatch(c -> c.equals(component.getClass()))) {
+                    throw new ContainerInstantiationException("More than one component of the same type found");
+
+                }
                 appComponents.add(component);
-            } catch (Exception e) {
+                appComponentsByName.put(method.getAnnotation(AppComponent.class).name(), component);
+            } catch (InvocationTargetException | IllegalAccessException e) {
                 throw new ContainerInstantiationException("Exception while parsing config file");
             }
         }
@@ -66,11 +69,6 @@ public class AppComponentsContainerImpl implements AppComponentsContainer {
                 )).toList();
     }
 
-    private void fillBeanNamesMap(List<Method> appMethods) {
-        beanNames = appMethods.stream()
-                .collect(Collectors.toMap(m -> m.getAnnotation(AppComponent.class).name(), m -> m.getReturnType().getSimpleName()));
-    }
-
     private void checkConfigClass(Class<?> configClass) {
         if (!configClass.isAnnotationPresent(AppComponentsContainerConfig.class)) {
             throw new IllegalArgumentException(String.format("Given class is not config %s", configClass.getName()));
@@ -80,30 +78,17 @@ public class AppComponentsContainerImpl implements AppComponentsContainer {
     @Override
     public <C> C getAppComponent(Class<C> componentClass) {
 
-        C object = (C) appComponentsByName.get(componentClass.getSimpleName());
-        if (object == null) {
-            if (componentClass.isInterface()) {
-                for (Object obj : appComponents) {
-                    if (Arrays.stream(obj.getClass().getInterfaces())
-                            .anyMatch(componentClass::isAssignableFrom)) {
-                        object = (C) appComponentsByName.get(obj.getClass().getSimpleName());
-                    }
-                }
-            } else {
-                String interfaceName = Arrays.stream(componentClass.getInterfaces())
-                        .map(Class::getSimpleName)
-                        .filter(appComponentsByName::containsKey)
-                        .findFirst().orElse(null);
-                object = (C) appComponentsByName.get(interfaceName);
+        for (var component : appComponents) {
+            if (componentClass.isAssignableFrom(component.getClass())
+                    || Objects.equals(componentClass, component.getClass())) {
+                return (C) component;
             }
         }
-
-        return object;
+        return null;
     }
 
     @Override
     public <C> C getAppComponent(String componentName) {
-        return (C) appComponentsByName.get(beanNames.get(componentName));
+        return (C) appComponentsByName.get(componentName);
     }
-
 }
