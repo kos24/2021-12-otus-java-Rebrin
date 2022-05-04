@@ -41,6 +41,7 @@ public class AppComponentsContainerImpl implements AppComponentsContainer {
                 Object component;
 
                 for (int i = 0; i < args.length; i++) {
+
                     args[i] = getAppComponent(method.getParameterTypes()[i]);
                     if (args[i] == null) {
                         throw new ContainerInstantiationException(String.format("Component of type: %s not found",
@@ -48,11 +49,11 @@ public class AppComponentsContainerImpl implements AppComponentsContainer {
                     }
                 }
                 component = method.invoke(object, args);
-                if (appComponents.stream().map(Object::getClass).anyMatch(c -> c.equals(component.getClass()))) {
-                    throw new ContainerInstantiationException("More than one component of the same type found");
-
-                }
                 appComponents.add(component);
+                if (appComponentsByName.containsKey(method.getAnnotation(AppComponent.class).name())) {
+                    throw new ContainerInstantiationException(String.format("More than one component with the same name found : %s",
+                            method.getAnnotation(AppComponent.class).name()));
+                }
                 appComponentsByName.put(method.getAnnotation(AppComponent.class).name(), component);
             } catch (InvocationTargetException | IllegalAccessException e) {
                 throw new ContainerInstantiationException("Exception while parsing config file");
@@ -77,12 +78,20 @@ public class AppComponentsContainerImpl implements AppComponentsContainer {
 
     @Override
     public <C> C getAppComponent(Class<C> componentClass) {
-
+        int count = 0;
+        C obj = null;
         for (var component : appComponents) {
-            if (componentClass.isAssignableFrom(component.getClass())
-                    || Objects.equals(componentClass, component.getClass())) {
-                return (C) component;
+            if (componentClass.isAssignableFrom(component.getClass())) {
+                count++;
+                obj = (C) component;
             }
+        }
+        if (count == 1) {
+            return obj;
+        } else if (count > 1) {
+            throw new ContainerInstantiationException(
+                    String.format("More than one component of the same type found : " +
+                            "%s, please consider using qualifier", componentClass.getName()));
         }
         return null;
     }
