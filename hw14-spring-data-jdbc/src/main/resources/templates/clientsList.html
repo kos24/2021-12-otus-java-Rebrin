@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>List of all clients</title>
+
+    <style>
+        .clients, .clients td {
+            border: 1px solid lightgray;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+    </style>
+
+</head>
+<body>
+<div th:switch="${clients}">
+    <img src="../static/client_icon.png" style="width: 300px; height: 200px" alt="Here is supposed to be a picture">
+    <h2 th:case="null">No clients yet!</h2>
+    <div th:case="*">
+        <h2>Clients</h2>
+        <table class = "clients">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Address</th>
+                <th>Phone</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="client : ${clients}">
+                <td th:text="${client.id}">1</td>
+                <td th:text="${client.name}">John</td>
+                <td th:text="${client.street}">Unnamed Street</td>
+                <td>
+<!--                    <table>-->
+<!--                        <tbody>-->
+<!--                        <tr th:each="phone : ${client.phones}">-->
+<!--                            <td th:text="${phone.number}">1</td>-->
+<!--                        </tr>-->
+<!--                        </tbody>-->
+<!--                    </table>-->
+                    <ul th:each="phone : ${client.phones}">
+                        <li th:text="${phone.number}">
+                        </li>
+                    </ul>
+
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <p><a href="/client/create">Add a new client</a></p>
+</div>
+</body>

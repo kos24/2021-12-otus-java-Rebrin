@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Create client</title>
+    <style>
+        body {
+            padding: 50px;
+        }
+
+        label {
+            display: inline-block;
+            width: 100px;
+        }
+
+        input:read-only {
+            background: lightgray;
+        }
+
+    </style>
+</head>
+<body>
+<form action="#" th:action="@{/client/save}" th:object="${client}" th:method="post" accept-charset="utf-8">
+    <fieldset>
+        <input type="submit" id="submitButton" th:value="Save">
+        <input type="reset" id="resetButton" name="reset" th:value="Reset"/>
+        <table>
+            <thead>
+            <tr>
+                <th> Name</th>
+                <th> Address</th>
+                <th> Phone</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td><input th:field="*{name}" /></td>
+                <td><input th:field="*{street}" /></td>
+                <td><input th:field="*{phoneNumber}" /></td>
+            </tr>
+            </tbody>
+        </table>
+    </fieldset>
+</form>
+</body>
+</html>
