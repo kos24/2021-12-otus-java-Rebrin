@@ -9,7 +9,10 @@ import ru.otus.lib.SensorDataBufferedWriter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 // Этот класс нужно реализовать
 public class SensorDataProcessorBuffered implements SensorDataProcessor {
@@ -17,8 +20,9 @@ public class SensorDataProcessorBuffered implements SensorDataProcessor {
 
     private final int bufferSize;
     private final SensorDataBufferedWriter writer;
-    private final PriorityBlockingQueue<SensorData> dataBuffer;
+    private final BlockingQueue<SensorData> dataBuffer;
     private final List<SensorData> bufferedData = new ArrayList<>();
+    private final Lock locker = new ReentrantLock(true);
 
     public SensorDataProcessorBuffered(int bufferSize, SensorDataBufferedWriter writer) {
         this.bufferSize = bufferSize;
@@ -30,13 +34,22 @@ public class SensorDataProcessorBuffered implements SensorDataProcessor {
     @Override
     public void process(SensorData data) {
 
-        if (dataBuffer.size() >= bufferSize) {
-            flush();
+        Thread.currentThread().setPriority(10);
+        Thread.yield();
+        locker.lock();
+        try {
+            if (dataBuffer.size() >= bufferSize) {
+                flush();
+            }
+            dataBuffer.add(data);
+        } finally {
+            locker.unlock();
         }
-        dataBuffer.add(data);
     }
 
-    public synchronized void flush() {
+    public void flush() {
+        Thread.currentThread().setPriority(1);
+        locker.lock();
         try {
             if (!dataBuffer.isEmpty()) {
                 bufferedData.clear();
@@ -45,6 +58,11 @@ public class SensorDataProcessorBuffered implements SensorDataProcessor {
             }
         } catch (Exception e) {
             log.error("Ошибка в процессе записи буфера", e);
+        } finally {
+            if (!dataBuffer.isEmpty()) {
+                flush();
+            }
+            locker.unlock();
         }
     }
 
