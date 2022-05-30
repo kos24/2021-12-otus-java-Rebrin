@@ -11,8 +11,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 // Этот класс нужно реализовать
 public class SensorDataProcessorBuffered implements SensorDataProcessor {
@@ -21,8 +19,6 @@ public class SensorDataProcessorBuffered implements SensorDataProcessor {
     private final int bufferSize;
     private final SensorDataBufferedWriter writer;
     private final BlockingQueue<SensorData> dataBuffer;
-    private final List<SensorData> bufferedData = new ArrayList<>();
-    private final Lock locker = new ReentrantLock(true);
 
     public SensorDataProcessorBuffered(int bufferSize, SensorDataBufferedWriter writer) {
         this.bufferSize = bufferSize;
@@ -32,27 +28,19 @@ public class SensorDataProcessorBuffered implements SensorDataProcessor {
     }
 
     @Override
-    public void process(SensorData data) {
+    public synchronized void process(SensorData data) {
 
-        Thread.currentThread().setPriority(10);
-        Thread.yield();
-        locker.lock();
-        try {
             if (dataBuffer.size() >= bufferSize) {
                 flush();
             }
             dataBuffer.add(data);
-        } finally {
-            locker.unlock();
-        }
     }
 
-    public void flush() {
-        Thread.currentThread().setPriority(1);
-        locker.lock();
+    public synchronized void flush() {
+
+        List<SensorData> bufferedData = new ArrayList<>();
         try {
             if (!dataBuffer.isEmpty()) {
-                bufferedData.clear();
                 dataBuffer.drainTo(bufferedData);
                 writer.writeBufferedData(bufferedData);
             }
@@ -62,7 +50,6 @@ public class SensorDataProcessorBuffered implements SensorDataProcessor {
             if (!dataBuffer.isEmpty()) {
                 flush();
             }
-            locker.unlock();
         }
     }
 
