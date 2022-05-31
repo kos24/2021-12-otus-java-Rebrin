@@ -153,9 +153,9 @@ class SensorDataProcessorBufferedTest {
         var flusherThread = new Thread(() -> {
             latchReady.countDown();
             awaitLatch(latchReady);
-            while (processFlag.get()) {
+            do {
                 processor.flush();
-            }
+            } while (processFlag.get());
         });
 
         writerThread.start();
@@ -163,6 +163,7 @@ class SensorDataProcessorBufferedTest {
 
         writerThread.join(100);
         flusherThread.join(100);
+//        processor.onProcessingEnd();
 
         assertThat(writer.getData()).hasSize(sensorDataList.size());
         assertThat(writer.getData()).isEqualTo(sensorDataList);
