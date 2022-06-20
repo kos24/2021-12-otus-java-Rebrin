@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package ru.otus.protobuf.generated;
+
+//option java_multiple_files = true;
+
+message ResponseValue {
+    int32 digit = 1;
+}
+
+message ValueLimit {
+    int32 lowerLimit = 1;
+    int32 upperLimit = 2;
+}
+
+service StreamValueService {
+    rpc requestValue(ValueLimit) returns (stream ResponseValue);
+}
