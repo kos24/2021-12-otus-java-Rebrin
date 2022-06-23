@@ -41,6 +41,10 @@ allprojects {
 
             dependency("org.projectlombok:lombok:${Versions.lombok}")
             dependency("com.google.code.gson:gson:${Versions.gson}")
+
+            dependency("io.grpc:grpc-netty:${Versions.grpc}")
+            dependency("io.grpc:grpc-protobuf:${Versions.grpc}")
+            dependency("io.grpc:grpc-stub:${Versions.grpc}")
         }
     }
 
