@@ -123,7 +123,7 @@ class SensorDataProcessorBufferedTest {
         assertThat(flushedData).hasSize(1);
     }
 
-    @RepeatedTest(100)
+    @RepeatedTest(1_000)
     void shouldCorrectFlushDataAndWriteThreads() throws InterruptedException {
         List<SensorData> sensorDataList = getSensorDataForTest(BUFFER_SIZE - 1);
 
@@ -156,6 +156,7 @@ class SensorDataProcessorBufferedTest {
             do {
                 processor.flush();
             } while (processFlag.get());
+            processor.flush();
         });
 
         writerThread.start();
@@ -163,7 +164,6 @@ class SensorDataProcessorBufferedTest {
 
         writerThread.join(100);
         flusherThread.join(100);
-//        processor.onProcessingEnd();
 
         assertThat(writer.getData()).hasSize(sensorDataList.size());
         assertThat(writer.getData()).isEqualTo(sensorDataList);
@@ -181,7 +181,7 @@ class SensorDataProcessorBufferedTest {
     private void awaitLatch(CountDownLatch latch) {
         try {
             var result = latch.await(10, TimeUnit.SECONDS);
-            if (result) {
+            if (!result) {
                 log.warn("timeout");
             }
         } catch (InterruptedException ignored) {
