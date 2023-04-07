@@ -2,9 +2,9 @@ package ru.otus.services.processors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.otus.lib.SensorDataBufferedWriter;
 import ru.otus.api.SensorDataProcessor;
 import ru.otus.api.model.SensorData;
-import ru.otus.lib.SensorDataBufferedWriter;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -30,10 +30,10 @@ public class SensorDataProcessorBuffered implements SensorDataProcessor {
     @Override
     public synchronized void process(SensorData data) {
 
-            if (dataBuffer.size() >= bufferSize) {
-                flush();
-            }
-            dataBuffer.add(data);
+        if (dataBuffer.size() >= bufferSize) {
+            flush();
+        }
+        dataBuffer.add(data);
     }
 
     public synchronized void flush() {
